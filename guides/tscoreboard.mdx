@@ -1,0 +1,125 @@
+---
+title: 'tScoreboard'
+description: 'A modern scoreboard for FiveM built with Vue 3 and Lua 5.4'
+icon: 'people'
+---
+
+## Overview
+
+`tScoreboard` is a premium scoreboard resource for FiveM servers, offering a sleek and modern interface. Built with **Vue 3** and **Lua 5.4**, it integrates seamlessly with ESX-based servers, providing essential features for roleplay communities.
+
+## Preview
+
+The following screenshots showcase the `tScoreboard` interface in action:
+
+![tScoreboard Config](https://r2.fivemanage.com/eJuQaZlWXYvPBKVnrGAQq/carbontscoreboard.png)
+*Main scoreboard interface displaying player list, roles, and ping indicators.*
+
+![tScoreboard Preview](https://r2.fivemanage.com/eJuQaZlWXYvPBKVnrGAQq/timedevscoreboaqrdpreview1.png)
+*Alternate view of the scoreboard highlighting Discord avatars and custom buttons.*
+
+## Features
+
+- **F10 Toggle**: Show or hide the scoreboard with a single keypress.
+- **Role Priority Display**: Prioritizes "Staff" over "Police" for users with multiple roles.
+- **Dual Role Counting**: Accurately counts users with multiple job roles in relevant categories.
+- **Discord Avatars**: Displays player avatars fetched from Discord.
+- **Ping Indicators**: Color-coded (green, yellow, red) based on player latency.
+- **Custom Buttons**: Includes links to your Tebex store and Discord server.
+
+<Info title="Note">
+This resource is escrow locked. The `scoreboard.vue` file is not customizable. Requires ESX and ox_lib.
+</Info>
+
+## Requirements
+
+Ensure the following dependencies are installed and configured:
+
+- **ESX Framework**: Required for core functionality.
+- **ox_lib**: Required for shared scripting utilities.
+- **Badger_Discord_API**: Required for Discord avatar integration.
+
+### Badger_Discord_API Configuration
+
+1. Download [Badger_Discord_API](https://github.com/JaredScar/Badger_Discord_API).
+2. Add the following to the `fxmanifest.lua` of `Badger_Discord_API`:
+
+```lua
+lua54 'yes'
+shared_scripts {
+    '@ox_lib/init.lua'
+}
+```
+
+3. Add this callback to the `server.lua` file in `Badger_Discord_API`:
+
+```lua
+lib.callback.register('getDiscordAvatar', function(source, identifier)
+    local discordId = nil
+    local imgURL = "https://cdn.discordapp.com/embed/avatars/1.png"
+
+    if identifier then
+        if string.match(identifier, "discord:") then
+            discordId = string.gsub(identifier, "discord:", "")
+        else
+            discordId = identifier
+        end
+    elseif source then
+        for _, id in ipairs(GetPlayerIdentifiers(source)) do
+            if string.match(id, "discord:") then
+                discordId = string.gsub(id, "discord:", "")
+                break
+            end
+        end
+    end
+
+    if discordId then
+        if not Caches.Avatars then Caches.Avatars = {} end
+        if Caches.Avatars[discordId] then
+            imgURL = Caches.Avatars[discordId]
+        else
+            local endpoint = ("users/%s"):format(discordId)
+            local member = DiscordRequest("GET", endpoint, {})
+            if member and member.code == 200 then
+                local data = json.decode(member.data)
+                if data and data.avatar then
+                    imgURL = ("https://cdn.discordapp.com/avatars/%s/%s.%s"):format(
+                        discordId,
+                        data.avatar,
+                        data.avatar:sub(1, 1) == "a" and "gif" or "png"
+                    )
+                end
+            else
+                print("[Badger_Discord_API] ERROR: Failed to fetch Discord avatar for ID " .. discordId .. ". Code: " .. (member.code or "unknown"))
+            end
+            Caches.Avatars[discordId] = imgURL
+        end
+    end
+
+    return imgURL
+end)
+```
+
+## Installation
+
+1. Place the `tScoreboard` folder in your server's `resources` directory.
+2. Ensure `ox_lib` and `Badger_Discord_API` are installed and configured.
+3. Add the following to your `server.cfg`:
+
+```cfg
+ensure tScoreboard
+```
+
+4. Restart your server or run `refresh` followed by `start tScoreboard`.
+
+## Purchase
+
+**Price**: $4.99
+
+To purchase:
+1. Join the [official Discord server](https://discord.gg/timedev).
+2. Open a purchase ticket in the designated channel.
+
+## Support
+
+For assistance, join the [official Discord server](https://discord.gg/timedev) or contact the support team directly via direct message.
